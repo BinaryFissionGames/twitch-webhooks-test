@@ -1,0 +1,25 @@
+{
+  "name": "twitch-webhooks-test",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "exit 0",
+    "build": "tsc",
+    "run": "node -r dotenv/config dist/index.js dotenv_config_path=config.env",
+    "runPM2": "pm2 start dist/index.js --name \"twitch-webhooks-test\""
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "@binaryfissiongames/twitch-webhooks": "^0.1.4",
+    "connect-session-sequelize": "^6.1.1",
+    "dotenv": "^8.2.0",
+    "express": "^4.17.1",
+    "express-session": "^1.17.1",
+    "sequelize": "^5.21.7",
+    "sqlite3": "^4.2.0",
+    "twitch-oauth-authorization-code-express": "^2.0.0"
+  }
+}
