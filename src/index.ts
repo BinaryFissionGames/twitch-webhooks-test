@@ -72,7 +72,7 @@ sequelize.sync().then(() => {
         certKey = fs.readFileSync(process.env.CERT_KEY_PATH);
     }
 
-    let httpsServer;
+    let httpsServer : https.Server;
     if (certKey && cert) {
         httpsServer = https.createServer({
             key: certKey,
@@ -81,4 +81,47 @@ sequelize.sync().then(() => {
     }
 
     let server = http.createServer(app).listen(Number.parseInt(process.env.HTTP_PORT), () => console.log(`HTTP listening on port ${process.env.HTTP_PORT}`));
+
+    process.on('SIGINT', () => {
+        let exitCode = 0;
+        let closeServer = () => {
+          server.close(async (e) => {
+              if(e){
+                  console.log("Error while shutting down http server");
+                  console.log(e);
+                  exitCode = 1;
+              }
+              try {
+                  await sequelize.close();
+              }catch (e) {
+                  console.log("Error while shutting down database connection");
+                  console.log(e);
+                  exitCode = 1;
+              }
+
+              try{
+                  await webhookManager.destroy();
+              }catch (e) {
+                  console.log("Error while destroying webhook manager");
+                  console.log(e);
+                  exitCode = 1;
+              }
+
+              process.exit(exitCode);
+          })
+        };
+
+       if(httpsServer){
+           httpsServer.close((e) => {
+               if(e){
+                   console.log("Error while shutting down https server");
+                   console.log(e);
+                   exitCode = 1;
+               }
+               closeServer();
+           });
+       } else {
+           closeServer();
+       }
+    });
 });
