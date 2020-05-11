@@ -206,16 +206,15 @@ async function addListenerForUser(userName: string, hasOauthToken: boolean, webh
 }
 
 async function addListenToRandomStreamers(webhookManager: TwitchWebhookManager) {
-    let promises = [];
     let users = JSON.parse(fs.readFileSync("streamers.json").toString("utf8"));
     for (let user of users) {
-        promises.push(addListenerForUser(user, false, webhookManager)
+        await addListenerForUser(user, false, webhookManager)
             .catch((e: TwitchRequestError) => {
+                console.error(`Failed to add listener to user ${user}`);
                 console.error(e);
                 console.error(e.toString())
-            }));
+            });
     }
-    return await Promise.all(promises);
 }
 
 export {

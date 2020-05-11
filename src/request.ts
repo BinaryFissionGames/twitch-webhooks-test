@@ -120,14 +120,14 @@ async function refreshToken(oAuthToken: string): Promise<string> {
         user.oAuthToken = info.access_token;
         user.refreshToken = info.refresh_token;
         //TODO: Update refresh token endpoint to return token expiry and stuff
-        user.save();
+        await user.save();
         return info.access_token;
     }
 }
 
 async function requestAppToken(scopes: string[]): Promise<Token> {
     return new Promise((resolve, reject) => {
-        let scopeString = scopes.length >= 1 ? '&' + encodeURIComponent(scopes.join(' ')) : '';
+        let scopeString = scopes && scopes.length >= 1 ? '&' + encodeURIComponent(scopes.join(' ')) : '';
         let request = https.request(`https://id.twitch.tv/oauth2/token?client_id=${process.env.CLIENT_ID}&client_secret=${process.env.CLIENT_SECRET}&grant_type=client_credentials${scopeString}`,
             {method: 'POST'},
             (res) => {
