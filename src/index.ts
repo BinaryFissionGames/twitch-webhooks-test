@@ -66,10 +66,14 @@ sequelize.sync().then(() => {
 
     if (fs.existsSync(process.env.CERT_PATH)) {
         cert = fs.readFileSync(process.env.CERT_PATH);
+    } else {
+        console.log(`File ${process.env.CERT_PATH} does not exist.`)
     }
 
     if (fs.existsSync(process.env.CERT_KEY_PATH)) {
         certKey = fs.readFileSync(process.env.CERT_KEY_PATH);
+    } else {
+        console.log(`File ${process.env.CERT_KEY_PATH} does not exist.`)
     }
 
     let httpsServer : https.Server;
