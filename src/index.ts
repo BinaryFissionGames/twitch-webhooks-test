@@ -66,12 +66,14 @@ sequelize.sync().then(() => {
 
     if (fs.existsSync(process.env.CERT_PATH)) {
         cert = fs.readFileSync(process.env.CERT_PATH);
+        console.log(cert) // TEMP - REMOVEME
     } else {
         console.log(`File ${process.env.CERT_PATH} does not exist.`)
     }
 
     if (fs.existsSync(process.env.CERT_KEY_PATH)) {
         certKey = fs.readFileSync(process.env.CERT_KEY_PATH);
+        console.log(certKey); // TEMP - REMOVEME
     } else {
         console.log(`File ${process.env.CERT_KEY_PATH} does not exist.`)
     }
