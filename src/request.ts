@@ -98,9 +98,13 @@ async function refreshToken(oAuthToken: string): Promise<string> {
     let token = await Token.findOne({where: {oAuthToken: oAuthToken}});
     if (token) {
         let scopes = token.scopes;
-        let scopeArray = [];
+        let scopeArray: string[];
         if (scopes !== '') {
             scopeArray = scopes.split(' ');
+        }
+
+        if (!scopeArray) {
+            scopeArray = [];
         }
 
         token.destroy();
