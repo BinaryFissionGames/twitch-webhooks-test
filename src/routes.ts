@@ -13,10 +13,10 @@ function setupRoutes(app: Application, webhookManager: TwitchWebhookManager) {
             () => refreshToken(req.session.access_token))
             .then(async (body) => {
                 let jsonBody = JSON.parse(body);
-                let user = await User.findOrCreate({
+                let user = (await User.findOrCreate({
                     where: {twitchId: jsonBody.login},
                     defaults: {twitchUserName: jsonBody.user_id, twitchId: jsonBody.login}
-                })[0];
+                }))[0];
 
                 user.oAuthToken = req.session.access_token;
                 user.refreshToken = req.session.refresh_token;
