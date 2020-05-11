@@ -13,7 +13,7 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
-    "@binaryfissiongames/twitch-webhooks": "^1.1.1",
+    "@binaryfissiongames/twitch-webhooks": "^1.1.2",
     "@types/bluebird": "^3.5.30",
     "@types/node": "^13.13.5",
     "@types/validator": "^13.0.0",

@@ -55,16 +55,20 @@ sequelize.sync().then(() => {
         scopes: ['channel:read:subscriptions', 'user:read:email', 'moderation:read'] // List of scopes your app is requesting access to
     });
 
+    let resubScheduler = new BasicWebhookRenewalScheduler();
+
     let webhookManager: TwitchWebhookManager = new TwitchWebhookManager({
         hostname: process.env.HOST_NAME,
         app: app,
         client_id: process.env.CLIENT_ID,
         base_path: 'webhooks',
-        renewalScheduler: new BasicWebhookRenewalScheduler(),
+        renewalScheduler: resubScheduler,
         persistenceManager: new SequelizeTwitchWebhookPersistenceManager(),
         getOAuthToken: getOAuthToken,
         refreshOAuthToken: refreshToken
     });
+
+    resubScheduler.setManager(webhookManager);
 
     webhookManager.on('message', getWebhookMessageCallback(webhookManager));
     webhookManager.on('error', (e) => {
