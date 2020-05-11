@@ -24,7 +24,7 @@ class SequelizeTwitchWebhookPersistenceManager implements TwitchWebhookPersisten
 
     async getAllWebhooks(): Promise<WebhookPersistenceObject[]> {
         let webhooks = await Webhook.findAll();
-        console.log(webhooks)
+        console.log(webhooks);
         return webhooks.map(this.modelToObject);
     }
 
@@ -32,6 +32,9 @@ class SequelizeTwitchWebhookPersistenceManager implements TwitchWebhookPersisten
         let webhook = await Webhook.findOne({where: {id: webhookId}});
         console.log(webhookId);
         console.log(webhook);
+        if(webhook === null){
+            return null;
+        }
         return this.modelToObject(webhook);
     }
 
