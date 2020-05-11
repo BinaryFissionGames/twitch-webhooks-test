@@ -62,27 +62,32 @@ sequelize.sync().then(() => {
 
     setupRoutes(app, webhookManager, subscriptions);
 
-    let certKey, cert;
+    let certKey, cert, chain;
 
     if (fs.existsSync(process.env.CERT_PATH)) {
         cert = fs.readFileSync(process.env.CERT_PATH);
-        console.log(cert) // TEMP - REMOVEME
     } else {
         console.log(`File ${process.env.CERT_PATH} does not exist.`)
     }
 
+    if (fs.existsSync(process.env.CERT_CHAIN_PATH)) {
+        chain = fs.readFileSync(process.env.CERT_CHAIN_PATH);
+    } else {
+        console.log(`File ${process.env.CERT_CHAIN_PATH} does not exist.`)
+    }
+
     if (fs.existsSync(process.env.CERT_KEY_PATH)) {
         certKey = fs.readFileSync(process.env.CERT_KEY_PATH);
-        console.log(certKey); // TEMP - REMOVEME
     } else {
         console.log(`File ${process.env.CERT_KEY_PATH} does not exist.`)
     }
 
     let httpsServer : https.Server;
-    if (certKey && cert) {
+    if (certKey && cert && chain) {
         httpsServer = https.createServer({
             key: certKey,
-            cert: cert
+            cert: cert,
+            ca: chain
         }, app).listen(Number.parseInt(process.env.HTTPS_PORT), () => console.log(`HTTPS listening on port ${process.env.HTTPS_PORT}`));
     }
 
