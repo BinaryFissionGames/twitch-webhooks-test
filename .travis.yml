@@ -1,0 +1,10 @@
+language: node_js
+node_js:
+  - 10
+notifications:
+  webhooks:
+    urls:
+      - http://test.binaryfissiongames.com:9080/travisci
+    on_cancel:  never # default: always
+    on_error:   never # default: always
+    on_failure: never # default: always
