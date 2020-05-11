@@ -4,14 +4,19 @@ import * as session from "express-session";
 import {SessionOptions} from "express-session";
 import {TwitchWebhookManager} from "@binaryfissiongames/twitch-webhooks";
 import {BasicWebhookRenewalScheduler} from "@binaryfissiongames/twitch-webhooks/dist/scheduling";
-import {Webhook} from "@binaryfissiongames/twitch-webhooks/dist/webhooks";
 import {setupRoutes} from "./routes";
 import {Sequelize} from "sequelize";
 import * as https from "https";
 import * as http from "http";
 import * as fs from "fs";
 import * as session_sequelize from "connect-session-sequelize"
-import {initModel} from "./model/message";
+import {initModel} from "./model/model";
+import {
+    addListenToRandomStreamers,
+    getWebhookMessageCallback,
+    SequelizeTwitchWebhookPersistenceManager
+} from "./webhooks";
+import {getOAuthToken, refreshToken} from "./request";
 
 const SequelizeStore = session_sequelize(session.Store);
 
@@ -19,8 +24,6 @@ const sequelize = new Sequelize({
     dialect: 'sqlite',
     storage: 'database/data.sqlite'
 });
-
-let subscriptions: Webhook[] = [];
 
 const app = express();
 let sess: SessionOptions = {
@@ -49,7 +52,7 @@ sequelize.sync().then(() => {
         client_secret: process.env.CLIENT_SECRET, // Twitch client secret
         force_verify: true, // If true, twitch will always ask the user to verify. If this is false, if the app is already authorized, twitch will redirect immediately back to the redirect uri
         redirect_uri: process.env.REDIRECT_URI, // URI to redirect to (this is the URI on this server, so the path defines the endpoint!)
-        scopes: ['channel:read:subscriptions', 'user:read:email'] // List of scopes your app is requesting access to
+        scopes: ['channel:read:subscriptions', 'user:read:email', 'moderation:read'] // List of scopes your app is requesting access to
     });
 
     let webhookManager: TwitchWebhookManager = new TwitchWebhookManager({
@@ -57,10 +60,18 @@ sequelize.sync().then(() => {
         app: app,
         client_id: process.env.CLIENT_ID,
         base_path: 'webhooks',
-        renewalScheduler: new BasicWebhookRenewalScheduler()
+        renewalScheduler: new BasicWebhookRenewalScheduler(),
+        persistenceManager: new SequelizeTwitchWebhookPersistenceManager(),
+        getOAuthToken: getOAuthToken,
+        refreshOAuthToken: refreshToken
     });
 
-    setupRoutes(app, webhookManager, subscriptions);
+    webhookManager.on('message', getWebhookMessageCallback(webhookManager));
+    webhookManager.on('error', (e) => {
+        console.log(e)
+    });
+
+    setupRoutes(app, webhookManager);
 
     let certKey, cert, chain;
 
@@ -82,13 +93,17 @@ sequelize.sync().then(() => {
         console.log(`File ${process.env.CERT_KEY_PATH} does not exist.`)
     }
 
-    let httpsServer : https.Server;
+    let httpsServer: https.Server;
     if (certKey && cert && chain) {
         httpsServer = https.createServer({
             key: certKey,
             cert: cert,
             ca: chain
-        }, app).listen(Number.parseInt(process.env.HTTPS_PORT), () => console.log(`HTTPS listening on port ${process.env.HTTPS_PORT}`));
+        }, app).listen(Number.parseInt(process.env.HTTPS_PORT), async () => {
+            console.log(`HTTPS listening on port ${process.env.HTTPS_PORT}`);
+            await webhookManager.init();
+            await addListenToRandomStreamers(webhookManager);
+        });
     }
 
     let server = http.createServer(app).listen(Number.parseInt(process.env.HTTP_PORT), () => console.log(`HTTP listening on port ${process.env.HTTP_PORT}`));
@@ -96,43 +111,43 @@ sequelize.sync().then(() => {
     process.on('SIGINT', () => {
         let exitCode = 0;
         let closeServer = () => {
-          server.close(async (e) => {
-              if(e){
-                  console.log("Error while shutting down http server");
-                  console.log(e);
-                  exitCode = 1;
-              }
-              try {
-                  await sequelize.close();
-              }catch (e) {
-                  console.log("Error while shutting down database connection");
-                  console.log(e);
-                  exitCode = 1;
-              }
+            server.close(async (e) => {
+                if (e) {
+                    console.log("Error while shutting down http server");
+                    console.log(e);
+                    exitCode = 1;
+                }
+                try {
+                    await sequelize.close();
+                } catch (e) {
+                    console.log("Error while shutting down database connection");
+                    console.log(e);
+                    exitCode = 1;
+                }
 
-              try{
-                  await webhookManager.destroy();
-              }catch (e) {
-                  console.log("Error while destroying webhook manager");
-                  console.log(e);
-                  exitCode = 1;
-              }
+                try {
+                    await webhookManager.destroy();
+                } catch (e) {
+                    console.log("Error while destroying webhook manager");
+                    console.log(e);
+                    exitCode = 1;
+                }
 
-              process.exit(exitCode);
-          })
+                process.exit(exitCode);
+            })
         };
 
-       if(httpsServer){
-           httpsServer.close((e) => {
-               if(e){
-                   console.log("Error while shutting down https server");
-                   console.log(e);
-                   exitCode = 1;
-               }
-               closeServer();
-           });
-       } else {
-           closeServer();
-       }
+        if (httpsServer) {
+            httpsServer.close((e) => {
+                if (e) {
+                    console.log("Error while shutting down https server");
+                    console.log(e);
+                    exitCode = 1;
+                }
+                closeServer();
+            });
+        } else {
+            closeServer();
+        }
     });
 });
