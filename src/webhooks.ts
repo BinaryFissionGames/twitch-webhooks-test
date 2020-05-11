@@ -23,18 +23,25 @@ class SequelizeTwitchWebhookPersistenceManager implements TwitchWebhookPersisten
     }
 
     async getAllWebhooks(): Promise<WebhookPersistenceObject[]> {
-        return (await Webhook.findAll()).map(this.modelToObject);
+        let webhooks = await Webhook.findAll();
+        console.log(webhooks)
+        return webhooks.map(this.modelToObject);
     }
 
     async getWebhookById(webhookId: string): Promise<WebhookPersistenceObject> {
-        return this.modelToObject(await Webhook.findOne({where: {id: webhookId}}));
+        let webhook = await Webhook.findOne({where: {id: webhookId}});
+        console.log(webhookId);
+        console.log(webhook);
+        return this.modelToObject(webhook);
     }
 
     async persistWebhook(webhook: WebhookPersistenceObject): Promise<void> {
+        console.log("Persisting", webhook);
         await Webhook.create(webhook);
     }
 
     async saveWebhook(webhook: WebhookPersistenceObject): Promise<void> {
+        console.log('Saving', webhook);
         await Webhook.update(webhook, {where: {id: webhook.id}});
     }
 

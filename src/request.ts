@@ -141,7 +141,7 @@ async function requestAppToken(scopes: string[]): Promise<Token> {
                     Token.create({
                         oAuthToken: token_info.access_token,
                         tokenExpiry: new Date(Date.now() + token_info.expires_in * 1000),
-                        scopes: token_info.scope.join(' ')
+                        scopes: token_info.scope?.join(' ')
                     }).then(token => {
                         resolve(token)
                     }).catch((e) => {
