@@ -99,7 +99,7 @@ async function refreshToken(oAuthToken: string): Promise<string> {
     if (token) {
         let scopes = token.scopes;
         let scopeArray: string[];
-        if (scopes !== '') {
+        if (scopes && scopes !== '') {
             scopeArray = scopes.split(' ');
         }
 
@@ -113,7 +113,7 @@ async function refreshToken(oAuthToken: string): Promise<string> {
         let user = await User.findOne({where: {oAuthToken: oAuthToken}});
         let scopes = user.scopes;
         let scopeArray = [];
-        if (scopes !== '') {
+        if (scopes && scopes !== '') {
             scopeArray = scopes.split(' ');
         }
         let info = await oauth.refreshToken(user.refreshToken, process.env.CLIENT_ID, process.env.CLIENT_SECRET, scopeArray);
